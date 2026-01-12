@@ -58,7 +58,6 @@ def generate_triangular_blocks(n):
             # Continue to explore adding more edges (don't stop here!)
 
         # Try adding edges to grow the graph
-        current_nodes = set(current_block.nodes())
         current_edges = set(tuple(sorted(e)) for e in current_block.edges())
 
         # Try all possible new edges
@@ -105,7 +104,6 @@ def find_extendable_edges(block, n):
     """
     extendable = []
     existing_edges = set(block.edges())
-    existing_nodes = set(block.nodes())
 
     # Normalize existing edges (ensure u < v)
     normalized_existing = set()
@@ -192,6 +190,115 @@ def forms_triangle_with_block(block, u, v):
     common_neighbors = u_neighbors & v_neighbors
 
     return len(common_neighbors) > 0
+
+
+def generate_triangular_blocks_avoiding_subgraph(n, forbidden_graph):
+    """
+    Generate all non-isomorphic triangular blocks with n vertices that do NOT
+    contain the forbidden_graph as a subgraph.
+
+    This is useful for Turán-type problems where we want to find extremal graphs
+    avoiding certain subgraphs.
+
+    Args:
+        n: Number of vertices (must be >= 2)
+        forbidden_graph: A networkx Graph that should not appear as a subgraph
+
+    Returns:
+        List of networkx Graph objects representing non-isomorphic triangular blocks
+        that do not contain forbidden_graph as a subgraph
+
+    Raises:
+        ValueError: If n < 2
+    """
+    if n < 2:
+        raise ValueError("n must be at least 2")
+
+    # Generate all triangular blocks on n vertices
+    all_blocks = []
+    visited_canonical = set()
+
+    # Start with edge (0, 1)
+    initial_block = nx.Graph()
+    initial_block.add_edge(0, 1)
+
+    queue = deque([initial_block])
+
+    while queue:
+        current_block = queue.popleft()
+
+        # Get canonical form for pruning
+        canon_form = get_canonical_form(current_block)
+        if canon_form in visited_canonical:
+            continue
+        visited_canonical.add(canon_form)
+
+        # Check if current block contains forbidden subgraph
+        # If it does, don't explore further from this state
+        if contains_subgraph(current_block, forbidden_graph):
+            continue  # Prune this branch
+
+        # If we have n vertices, check if it's valid and doesn't contain forbidden subgraph
+        if len(current_block.nodes()) == n:
+            if is_valid_triangular_block_structure(current_block):
+                # Double-check it doesn't contain forbidden subgraph
+                if not contains_subgraph(current_block, forbidden_graph):
+                    all_blocks.append(current_block)
+
+        # Try adding edges to grow the graph
+        current_edges = set(tuple(sorted(e)) for e in current_block.edges())
+
+        # Try all possible new edges
+        for u in range(n):
+            for v in range(u + 1, n):
+                if (u, v) in current_edges:
+                    continue
+
+                # Add this edge and test
+                new_block = current_block.copy()
+                new_block.add_edge(u, v)
+
+                # Check planarity
+                is_planar, _ = nx.check_planarity(new_block)
+                if not is_planar:
+                    continue
+
+                # Check if adding this edge creates the forbidden subgraph
+                if contains_subgraph(new_block, forbidden_graph):
+                    continue  # Skip this edge
+
+                # Add to queue if still within n vertices
+                if len(new_block.nodes()) <= n:
+                    queue.append(new_block)
+
+    # Remove isomorphic duplicates
+    unique_blocks = remove_isomorphic_duplicates(all_blocks)
+
+    return unique_blocks
+
+
+def contains_subgraph(graph, subgraph):
+    """
+    Check if graph contains subgraph (via subgraph isomorphism).
+
+    Args:
+        graph: The larger graph to check
+        subgraph: The smaller graph to look for
+
+    Returns:
+        Boolean indicating if subgraph is found in graph
+    """
+    # Quick checks
+    if subgraph.number_of_nodes() > graph.number_of_nodes():
+        return False
+    if subgraph.number_of_edges() > graph.number_of_edges():
+        return False
+
+    # Use NetworkX's subgraph isomorphism checker
+    from networkx.algorithms import isomorphism
+
+    GM = isomorphism.GraphMatcher(graph, subgraph)
+    return GM.subgraph_is_isomorphic()
 
 
 def generate_triangular_blocks_verbose(n, verbose=True):
@@ -315,7 +422,7 @@ def _get_triangular_faces(embedding):
     return faces
 
 
-def is_maximal_triangular_block_structure(graph, n):
+def is_maximal_triangular_block_structure(graph):
     """
     Check if a triangular block is maximal.
 
@@ -324,7 +431,6 @@ def is_maximal_triangular_block_structure(graph, n):
 
     Args:
         graph: networkx Graph
-        n: Maximum number of vertices
 
     Returns:
         Boolean indicating if block is maximal

@@ -6,10 +6,12 @@ Generate all non-isomorphic triangular blocks on n vertices.
 
 from .triangular_blocks import (
     generate_triangular_blocks,
+    generate_triangular_blocks_avoiding_subgraph,
     generate_triangular_blocks_verbose,
     find_extendable_edges,
     forms_triangle_with_block,
-    get_block_info
+    get_block_info,
+    contains_subgraph
 )
 
 from .isomorphism import (
@@ -30,10 +32,12 @@ __version__ = '0.1.0'
 
 __all__ = [
     'generate_triangular_blocks',
+    'generate_triangular_blocks_avoiding_subgraph',
     'generate_triangular_blocks_verbose',
     'find_extendable_edges',
     'forms_triangle_with_block',
     'get_block_info',
+    'contains_subgraph',
     'get_canonical_form',
     'remove_isomorphic_duplicates',
     'are_isomorphic',

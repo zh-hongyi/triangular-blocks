@@ -16,6 +16,7 @@ A **triangular block** is a subgraph of a planar graph obtained by:
 ## Features
 
 - Generate all non-isomorphic triangular blocks for a given number of vertices
+- Generate triangular blocks avoiding forbidden subgraphs (for Turán-type problems)
 - Efficient canonical form checking (with optional pynauty support)
 - Validation of generated blocks
 - Visualization capabilities
@@ -104,6 +105,40 @@ for i, block in enumerate(blocks):
     # Validate
     is_valid, msg = validate_triangular_block(block)
     print(f"  Validation: {msg}")
+```
+
+### Avoiding Forbidden Subgraphs
+
+Generate triangular blocks that avoid a specific forbidden subgraph (useful for Turán-type problems):
+
+```bash
+# Avoid 4-cycles (C4) on 6 vertices
+python example_avoid_subgraph.py 6 C4
+
+# Avoid complete graphs (K4)
+python example_avoid_subgraph.py 6 K4
+
+# Avoid paths (P4)
+python example_avoid_subgraph.py 6 P4
+```
+
+**Programmatic usage:**
+
+```python
+import networkx as nx
+from src.triangular_blocks import generate_triangular_blocks_avoiding_subgraph
+
+# Define forbidden subgraph (e.g., C4 - 4-cycle)
+C4 = nx.cycle_graph(4)
+
+# Generate blocks avoiding C4
+blocks = generate_triangular_blocks_avoiding_subgraph(n=6, forbidden_graph=C4)
+
+print(f"Found {len(blocks)} C4-free triangular blocks on 6 vertices")
+
+# Find extremal result (maximum edges)
+max_edges = max(b.number_of_edges() for b in blocks)
+print(f"Maximum edges in C4-free blocks: {max_edges}")
 ```
 
 ### Visualization
@@ -203,12 +238,24 @@ Test Results: 6 passed, 0 failed
 
 ### Known Results
 
-| n | Number of Blocks | Example Structures |
-|---|------------------|-------------------|
+**All triangular blocks:**
+
+| n | Number of Blocks | Notes |
+|---|------------------|-------|
 | 2 | 1 | Single edge |
 | 3 | 1 | K3 (triangle) |
-| 4 | 1 | K4 (complete graph on 4 vertices) |
-| 5 | 1 | K5 minus one edge (9 edges) |
+| 4 | 2 | Square with diagonal (5 edges), K4 (6 edges) |
+| 5 | 4 | Blocks with 7, 8, 8, 9 edges |
+| 6 | 2 | Blocks with 12 edges (different structures) |
+
+**C4-free triangular blocks:**
+
+| n | Number of Blocks | Max Edges |
+|---|------------------|-----------|
+| 3 | 1 | 3 |
+| 4 | 2 | 6 |
+| 5 | 3 | 9 |
+| 6 | 6 | 12 |
 
 ## References
 
