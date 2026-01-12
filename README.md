@@ -67,14 +67,47 @@ Generating Triangular Blocks with 5 Vertices
 ============================================================
 
 Generating triangular blocks with 5 vertices...
-Found 1 non-isomorphic triangular blocks
-  Block 1: 5 vertices, 9 edges
+Found 4 non-isomorphic triangular blocks
+  Block 1: 5 vertices, 7 edges
+  Block 2: 5 vertices, 8 edges
+  Block 3: 5 vertices, 8 edges
+  Block 4: 5 vertices, 9 edges
 
 ============================================================
 Detailed Information
 ============================================================
 
 Block 1:
+----------------------------------------
+  Vertices: 5
+  Edges: 7
+  Degree sequence: [4, 3, 3, 2, 2]
+  Is planar: True
+  Is connected: True
+  Edge list: [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (2, 4)]
+  Validation: Valid triangular block
+
+Block 2:
+----------------------------------------
+  Vertices: 5
+  Edges: 8
+  Degree sequence: [4, 4, 3, 3, 2]
+  Is planar: True
+  Is connected: True
+  Edge list: [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3)]
+  Validation: Valid triangular block
+
+Block 3:
+----------------------------------------
+  Vertices: 5
+  Edges: 8
+  Degree sequence: [4, 3, 3, 3, 3]
+  Is planar: True
+  Is connected: True
+  Edge list: [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (2, 4), (3, 4)]
+  Validation: Valid triangular block
+
+Block 4:
 ----------------------------------------
   Vertices: 5
   Edges: 9
@@ -210,27 +243,38 @@ Triangular Block Generation - Test Suite
 
 === Testing n=2 ===
 Found 1 block(s)
+  Block 1: 1 edges
 ✓ n=2 test passed
 
 === Testing n=3 ===
 Found 1 block(s)
-  Block 1: K3 (triangle)
+  Block 1: K3 (triangle), 3 edges
 ✓ n=3 test passed
 
 === Testing n=4 ===
-Found 1 block(s)
-  Block 1: 6 edges, degree sequence [3, 3, 3, 3]
-    Validation: Valid triangular block
+Found 2 block(s)
+  Block 1: 5 edges, degree sequence [3, 3, 2, 2]
+  Block 2: 6 edges, degree sequence [3, 3, 3, 3]
+    Validation: Valid triangular blocks
 ✓ n=4 test passed
 
 === Testing n=5 ===
-Found 1 block(s)
-  Block 1: 9 edges, degree sequence [4, 4, 4, 3, 3]
-    Validation: Valid triangular block
+Found 4 block(s)
+  Block 1: 7 edges, degree sequence [4, 3, 3, 2, 2]
+  Block 2: 8 edges, degree sequence [4, 4, 3, 3, 2]
+  Block 3: 8 edges, degree sequence [4, 3, 3, 3, 3]
+  Block 4: 9 edges, degree sequence [4, 4, 4, 3, 3]
+    Validation: Valid triangular blocks
 ✓ n=5 test passed
 
+=== Testing n=6 ===
+Found 10 block(s)
+  Blocks with 9, 10, 10, 11, 11, 11, 11, 11, 12, 12 edges
+    Validation: Valid triangular blocks
+✓ n=6 test passed
+
 ============================================================
-Test Results: 6 passed, 0 failed
+Test Results: All tests passed
 ============================================================
 ```
 
@@ -244,9 +288,9 @@ Test Results: 6 passed, 0 failed
 |---|------------------|-------|
 | 2 | 1 | Single edge |
 | 3 | 1 | K3 (triangle) |
-| 4 | 2 | Square with diagonal (5 edges), K4 (6 edges) |
-| 5 | 4 | Blocks with 7, 8, 8, 9 edges |
-| 6 | 2 | Blocks with 12 edges (different structures) |
+| 4 | 2 | 5 edges (square with diagonal), 6 edges (K4) |
+| 5 | 4 | 7, 8, 8, 9 edges |
+| 6 | 10 | 9, 10, 10, 11, 11, 11, 11, 11, 12, 12 edges |
 
 **C4-free triangular blocks:**
 
