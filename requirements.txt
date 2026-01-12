@@ -1,0 +1,5 @@
+networkx>=3.0
+matplotlib>=3.5.0
+# pynauty is optional but recommended for better performance
+# Install with: pip install pynauty
+# or: conda install -c conda-forge pynauty
