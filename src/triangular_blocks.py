@@ -330,8 +330,11 @@ def is_valid_triangular_block_structure(graph):
     """
     Check if a graph is a valid triangular block structure.
 
-    A graph is a valid triangular block if edges can be reachable from any starting edge
-    through shared triangular faces in the planar embedding.
+    Simplified definition:
+    1. Graph must be planar and connected
+    2. Every edge must be part of at least one triangle (no standalone edges)
+    3. All triangles in the graph must form a connected structure
+       (can reach any triangle from any other by crossing shared edges)
 
     Args:
         graph: networkx Graph
@@ -345,48 +348,118 @@ def is_valid_triangular_block_structure(graph):
         return False
 
     # Check if planar
-    is_planar, embedding = nx.check_planarity(graph)
+    is_planar, _ = nx.check_planarity(graph)
     if not is_planar:
         return False
 
-    # Get all triangular faces
-    triangular_faces = _get_triangular_faces(embedding)
-    if len(triangular_faces) == 0 and graph.number_of_edges() > 1:
-        return False  # Must have triangular faces
+    # Find all triangles in the graph
+    triangles = []
+    nodes = list(graph.nodes())
+    for i, u in enumerate(nodes):
+        for j, v in enumerate(nodes[i+1:], i+1):
+            for k, w in enumerate(nodes[j+1:], j+1):
+                if graph.has_edge(u, v) and graph.has_edge(v, w) and graph.has_edge(u, w):
+                    triangles.append(tuple(sorted([u, v, w])))
 
-    # Build edge adjacency through triangular faces
-    edges_list = list(graph.edges())
-    edge_to_idx = {tuple(sorted(e)): i for i, e in enumerate(edges_list)}
+    if len(triangles) == 0:
+        return False
 
-    # Build adjacency: edges that share a triangular face
-    edge_adj = [set() for _ in range(len(edges_list))]
+    # Check: every edge must be part of at least one triangle
+    edges_in_triangles = set()
+    for tri in triangles:
+        edges_in_triangles.add(tuple(sorted([tri[0], tri[1]])))
+        edges_in_triangles.add(tuple(sorted([tri[1], tri[2]])))
+        edges_in_triangles.add(tuple(sorted([tri[0], tri[2]])))
 
-    for face in triangular_faces:
-        face_edges = []
-        for i in range(len(face)):
-            e = tuple(sorted([face[i], face[(i+1) % len(face)]]))
-            if e in edge_to_idx:
-                face_edges.append(edge_to_idx[e])
+    for edge in graph.edges():
+        if tuple(sorted(edge)) not in edges_in_triangles:
+            return False  # This edge is not part of any triangle
 
-        # All edges in this face are adjacent to each other
-        for i in range(len(face_edges)):
-            for j in range(i+1, len(face_edges)):
-                edge_adj[face_edges[i]].add(face_edges[j])
-                edge_adj[face_edges[j]].add(face_edges[i])
+    # Check: all triangles must be reachable from each other
+    # Build a graph where nodes are triangles, edges connect triangles that share an edge
+    if len(triangles) > 1:
+        triangle_graph = nx.Graph()
+        for i in range(len(triangles)):
+            triangle_graph.add_node(i)
 
-    # Check if all edges are reachable from edge 0 through triangular face adjacency
-    visited = {0}
-    queue = deque([0])
+        for i in range(len(triangles)):
+            for j in range(i+1, len(triangles)):
+                tri_i = triangles[i]
+                tri_j = triangles[j]
 
-    while queue:
-        curr_edge_idx = queue.popleft()
-        for neighbor_idx in edge_adj[curr_edge_idx]:
-            if neighbor_idx not in visited:
-                visited.add(neighbor_idx)
-                queue.append(neighbor_idx)
+                # Get edges of each triangle
+                edges_i = {tuple(sorted([tri_i[0], tri_i[1]])),
+                           tuple(sorted([tri_i[1], tri_i[2]])),
+                           tuple(sorted([tri_i[0], tri_i[2]]))}
+                edges_j = {tuple(sorted([tri_j[0], tri_j[1]])),
+                           tuple(sorted([tri_j[1], tri_j[2]])),
+                           tuple(sorted([tri_j[0], tri_j[2]]))}
 
-    # All edges should be reachable
-    return len(visited) == len(edges_list)
+                # Check if triangles share an edge
+                if edges_i & edges_j:
+                    triangle_graph.add_edge(i, j)
+
+        # Check if triangle graph is connected
+        if not nx.is_connected(triangle_graph):
+            return False
+
+    return True
+
+
+def _can_construct_from_edge(graph, edges_list, start_idx):
+    """
+    Check if the graph can be constructed starting from a specific edge.
+
+    Correct rule: An edge (u,v) can be added if it's part of a triangle (u,v,w)
+    where at least one of the other edges (u,w) or (v,w) is already in the subgraph.
+    This means the new edge "shares a triangular face" with an existing edge.
+
+    Args:
+        graph: The networkx Graph
+        edges_list: List of all edges
+        start_idx: Index of the starting edge
+
+    Returns:
+        Boolean indicating if construction is possible from this edge
+    """
+    # Build a subgraph with only the added edges
+    added_edges = [start_idx]
+    subgraph = nx.Graph()
+    subgraph.add_edge(*edges_list[start_idx])
+
+    # Keep trying to add edges that share triangular faces with existing edges
+    changed = True
+    while changed:
+        changed = False
+
+        for i, (u, v) in enumerate(edges_list):
+            if i in added_edges:
+                continue
+
+            # Edge (u,v) can be added if it's part of a triangle (u,v,w) where
+            # at least one of (u,w) or (v,w) is already in the subgraph
+            can_add = False
+
+            # Find all triangles containing edge (u,v) in the original graph
+            u_neighbors = set(graph.neighbors(u))
+            v_neighbors = set(graph.neighbors(v))
+            common_neighbors = u_neighbors & v_neighbors
+
+            for w in common_neighbors:
+                # Triangle (u,v,w) exists in the original graph
+                # Check if either (u,w) or (v,w) is in the subgraph
+                if subgraph.has_edge(u, w) or subgraph.has_edge(v, w):
+                    # This edge shares a triangular face with an existing edge!
+                    can_add = True
+                    break
+
+            if can_add:
+                subgraph.add_edge(u, v)
+                added_edges.append(i)
+                changed = True
+
+    # Check if we added all edges
+    return len(added_edges) == len(edges_list)
 
 
 def _get_triangular_faces(embedding):
